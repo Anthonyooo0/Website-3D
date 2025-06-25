@@ -1,0 +1,94 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ShockTech Sample Viewer</title>
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; }
+    header { background: #003366; color: white; padding: 10px 20px; display: flex; align-items: center; }
+    header img { height: 40px; margin-right: 15px; }
+    nav { margin-left: auto; }
+    nav a { color: white; margin-left: 15px; text-decoration: none; }
+    #viewer { width: 100%; height: 80vh; display: block; }
+    #controls { padding: 10px; background: #f4f4f4; }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="https://via.placeholder.com/150x40?text=ShockTech" alt="ShockTech Logo">
+    <h1>ShockTech 3D Viewer</h1>
+    <nav>
+      <a href="#">Home</a>
+      <a href="#">Catalog</a>
+      <a href="#">Contact</a>
+    </nav>
+  </header>
+
+  <canvas id="viewer"></canvas>
+  <div id="controls">
+    <label>Color:
+      <input type="color" id="colorPicker" value="#0077ff">
+    </label>
+    <p>Sample Part: Solid Cube. This is a placeholder for future aerospace components in the catalog.</p>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.148.0/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.148.0/examples/js/controls/OrbitControls.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.148.0/examples/js/loaders/GLTFLoader.min.js"></script>
+
+  <script>
+    const canvas = document.getElementById('viewer');
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight * 0.8);
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf0f0f0);
+    const camera = new THREE.PerspectiveCamera(45, canvas.clientWidth/canvas.clientHeight, 0.1, 100);
+    camera.position.set(2, 2, 4);
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+
+    const light1 = new THREE.DirectionalLight(0xffffff, 0.8);
+    light1.position.set(5, 10, 7);
+    scene.add(light1);
+    scene.add(new THREE.AmbientLight(0x404040));
+
+    let partMesh = null;
+    const loader = new THREE.GLTFLoader();
+    loader.load('models/sample_cube.glb', gltf => {
+      partMesh = gltf.scene;
+      partMesh.traverse(node => {
+        if (node.isMesh) {
+          node.material = new THREE.MeshStandardMaterial({ color: document.getElementById('colorPicker').value });
+        }
+      });
+      scene.add(partMesh);
+    });
+
+    document.getElementById('colorPicker').addEventListener('input', e => {
+      if (!partMesh) return;
+      const newColor = new THREE.Color(e.target.value);
+      partMesh.traverse(node => {
+        if (node.isMesh) {
+          node.material.color.set(newColor);
+        }
+      });
+    });
+
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    window.addEventListener('resize', () => {
+      const w = window.innerWidth, h = window.innerHeight * 0.8;
+      renderer.setSize(w, h);
+      camera.aspect = w/h;
+      camera.updateProjectionMatrix();
+    });
+  </script>
+</body>
+</html>
